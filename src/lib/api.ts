@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+const API_BASE_URL = "https://calmcampus-5hry.onrender.com/api" || "/api";
 const INSTITUTION_KEY = "calmcampus_selected_institution_id";
 
 type ApiOptions = Omit<RequestInit, "body"> & {
