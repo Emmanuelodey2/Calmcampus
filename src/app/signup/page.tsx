@@ -45,7 +45,7 @@ export default function SignupPage() {
         method: "POST",
         body: { email, password, role, institution_id: institutionId || undefined },
       });
-      router.push("/Login");
+      router.push("/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create account");
     } finally {
@@ -149,7 +149,7 @@ export default function SignupPage() {
 
           <p className="mt-6 text-sm text-slate-500">
             Already have an account?{" "}
-            <Link href="/Login" className="font-medium text-slate-950 underline decoration-slate-300 underline-offset-4">
+            <Link href="/login" className="font-medium text-slate-950 underline decoration-slate-300 underline-offset-4">
               Sign in
             </Link>
           </p>

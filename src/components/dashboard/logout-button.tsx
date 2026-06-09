@@ -17,7 +17,7 @@ export default function LogoutButton() {
       setSelectedInstitutionId(null);
       window.localStorage.removeItem("calmcampus_role");
       window.localStorage.removeItem("calmcampus_email");
-      router.push("/Login");
+      router.push("/login");
       setLoading(false);
     }
   }
