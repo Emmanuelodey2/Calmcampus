@@ -1,7 +1,7 @@
 
 const API_BASE_URL = "https://calmcampus-5hry.onrender.com/api";
 const INSTITUTION_KEY = "calmcampus_selected_institution_id";
-
+const TOKEN_WARNING_MINUTES = 5;
 
 type ApiOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | Record<string, unknown> | null;
