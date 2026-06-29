@@ -4,50 +4,43 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { apiRequest, setSelectedInstitutionId } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
+import { useGlobalLoading } from "@/components/ui/loading-provider";
 
 type LoginResponse = {
   message: string;
-  role: string;
+  role: "student" | "counsellor" | "admin";
   email: string;
-  institution?: { id: number } | null;
+  institution?: { id: number; name: string; slug: string } | null;
 };
 
 export default function LoginPage() {
   const router = useRouter();
+  const toast = useToast();
+  const { startLoading } = useGlobalLoading();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
-      const response = await apiRequest<LoginResponse>("/auth/login/", {
+      const data = await apiRequest<LoginResponse>("/auth/login/", {
         method: "POST",
         body: { email, password },
       });
-
-      window.localStorage.setItem("calmcampus_role", response.role);
-      window.localStorage.setItem("calmcampus_email", email);
-      if (response.role === "admin") {
-        setSelectedInstitutionId(null);
-      } else if (response.institution?.id) {
-        setSelectedInstitutionId(String(response.institution.id));
-      }
-
-      const redirect = window.localStorage.getItem("redirectAfterLogin") || "/dashboard";
-      window.localStorage.removeItem("redirectAfterLogin");
-      router.push(redirect);
+      toast.success("Welcome back!", "Redirecting to your workspace...");
+      startLoading("Loading your workspace...");
+      router.push(data.role === "admin" ? "/admin" : "/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to sign in");
-    } finally {
+      toast.error("Sign in failed", err instanceof Error ? err.message : "Unable to sign in");
       setLoading(false);
     }
   }
+
 
   return (
     <main className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
@@ -98,9 +91,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {error ? (
-              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-            ) : null}
+
 
             <button
               type="submit"
@@ -115,6 +106,11 @@ export default function LoginPage() {
             Need an account?{" "}
             <Link href="/signup" className="font-medium text-slate-950 underline decoration-slate-300 underline-offset-4">
               Create one
+            </Link>
+          </p>
+          <p className="mt-2 text-sm text-slate-500">
+            <Link href="/request-reset" className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4">
+              Forgot password?
             </Link>
           </p>
         </section>

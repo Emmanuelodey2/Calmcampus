@@ -3,23 +3,25 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get("access")?.value;
+  const token = request.cookies.get("accessToken")?.value;
+  const { pathname } = request.nextUrl;
 
-  const isAuthPage = request.nextUrl.pathname.startsWith("/login");
+  const isAuthPage   = pathname.startsWith("/login");
+  const isProtected  = pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
 
-  // If no token and trying to access dashboard → redirect
-  if (!token && request.nextUrl.pathname.startsWith("/dashboard")) {
+  // Unauthenticated user trying to access a protected route → redirect to login
+  if (!token && isProtected) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // If logged in and trying to access login → redirect to dashboard
+  // Logged-in user trying to view the login page → redirect to dashboard
   if (token && isAuthPage) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 }
-// middleware.ts
+
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/admin"],
 };

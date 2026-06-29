@@ -3,21 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { apiRequest, setSelectedInstitutionId } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
 
 export default function LogoutButton() {
   const router = useRouter();
+  const toast  = useToast();
   const [loading, setLoading] = useState(false);
 
   async function handleLogout() {
     setLoading(true);
     try {
       await apiRequest("/auth/logout/", { method: "POST" });
-    } finally {
-      setSelectedInstitutionId(null);
-      window.localStorage.removeItem("calmcampus_role");
-      window.localStorage.removeItem("calmcampus_email");
+      toast.success("Signed out", "You have been logged out successfully.");
       router.push("/login");
+    } catch {
+      toast.error("Logout failed", "Please try again.");
+    } finally {
       setLoading(false);
     }
   }

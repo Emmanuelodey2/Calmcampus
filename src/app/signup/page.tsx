@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import { Mail } from "lucide-react";
 
 type Institution = {
   id: number;
@@ -22,6 +23,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [loadingInstitutions, setLoadingInstitutions] = useState(true);
   const [error, setError] = useState("");
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   useEffect(() => {
     apiRequest<Institution[]>("/institutions/")
@@ -45,12 +47,39 @@ export default function SignupPage() {
         method: "POST",
         body: { email, password, role, institution_id: institutionId || undefined },
       });
-      router.push("/login");
+      setSignupSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create account");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (signupSuccess) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <div className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
+          <Mail className="mx-auto h-12 w-12 text-blue-600" />
+          <h1 className="mt-6 text-2xl font-semibold text-slate-950">
+            Check your email
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            We&apos;ve sent a verification link to{" "}
+            <span className="font-medium text-slate-950">{email}</span>.
+            Please open it to activate your account.
+          </p>
+          <p className="mt-2 text-sm text-slate-500">
+            You have 1 hour to verify before the account is removed.
+          </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+          >
+            Go to login
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   return (
