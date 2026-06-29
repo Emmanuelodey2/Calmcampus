@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://calmcampus-5hry.onrender.com/api" || "/api";
+const API_BASE_URL = "https://calmcampus-5hry.onrender.com/api";
 const INSTITUTION_KEY = "calmcampus_selected_institution_id";
 
 type ApiOptions = Omit<RequestInit, "body"> & {
