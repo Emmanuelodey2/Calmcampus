@@ -1,10 +1,7 @@
-<<<<<<< HEAD
+
 const API_BASE_URL = "https://calmcampus-5hry.onrender.com/api";
 const INSTITUTION_KEY = "calmcampus_selected_institution_id";
-=======
-const API_BASE_URL = "https://calmcampus-rouge.vercel.app";
-const TOKEN_WARNING_MINUTES = 5;
->>>>>>> f068680 (refactor Ui)
+
 
 type ApiOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | Record<string, unknown> | null;
