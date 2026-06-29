@@ -2,7 +2,7 @@
 const API_BASE_URL = "https://calmcampus-5hry.onrender.com/api";
 const INSTITUTION_KEY = "calmcampus_selected_institution_id";
 =======
-const API_BASE_URL = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL || "/api");
+const API_BASE_URL = "https://calmcampus-rouge.vercel.app";
 const TOKEN_WARNING_MINUTES = 5;
 >>>>>>> f068680 (refactor Ui)
 
