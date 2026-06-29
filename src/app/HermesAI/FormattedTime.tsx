@@ -1,14 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
 
 export default function FormattedTime({ iso }: { iso: string }) {
-  const [time, setTime] = useState("");
-
-  useEffect(() => {
-    const date = new Date(iso);
-    const formatted = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setTime(formatted);
-  }, [iso]);
+  const date = new Date(iso);
+  const time = Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return <span suppressHydrationWarning>{time}</span>;
 }

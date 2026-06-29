@@ -305,7 +305,7 @@ export default function Journal() {
         <h4 className="font-bold text-brand-900 flex items-center">
           <Type size={18} className="mr-2" /> Writing Prompt
         </h4>
-        <p className="text-brand-700 text-sm italic">"What are three things you're grateful for today, no matter how small?"</p>
+        <p className="text-brand-700 text-sm italic">&quot;What are three things you&apos;re grateful for today, no matter how small?&quot;</p>
         <button
           onClick={() => {
             setCurrentEntry({ id: "", title: "", content: "", timestamp: Date.now() });

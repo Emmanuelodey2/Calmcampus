@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, CheckCircle, Clock } from "lucide-react";
 import { apiRequest, UserSummary } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Appointment = {
   id: number;
   student: UserSummary;
   counsellor: UserSummary;
+  requested_by: UserSummary;
   requested_for: string;
   status: string;
   reason: string;
@@ -15,23 +18,33 @@ type Appointment = {
 };
 
 export default function AppointmentsPage() {
+  const toast = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [counsellors, setCounsellors] = useState<UserSummary[]>([]);
   const [requestedFor, setRequestedFor] = useState("");
   const [reason, setReason] = useState("");
   const [counsellorId, setCounsellorId] = useState("");
   const [error, setError] = useState("");
+  const [myId, setMyId] = useState<number | null>(null);
+  const [myRole, setMyRole] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<UserSummary[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   async function load() {
     try {
-      const [appointmentData, counsellorData] = await Promise.all([
+      const [appointmentData, authData] = await Promise.all([
         apiRequest<Appointment[]>("/appointments/"),
-        apiRequest<UserSummary[]>("/counsellors/"),
+        apiRequest<{ id: number; email: string; role: string }>("/authentication/"),
       ]);
       setAppointments(appointmentData);
-      setCounsellors(counsellorData);
+      setMyId(authData.id);
+      setMyRole(authData.role);
+      const contactsPath = authData.role === "counsellor" ? "/counsellor/students/" : "/counsellors/";
+      const contactsData = await apiRequest<UserSummary[]>(contactsPath);
+      setContacts(contactsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load appointments");
+    } finally {
+      setInitialLoading(false);
     }
   }
 
@@ -41,17 +54,23 @@ export default function AppointmentsPage() {
 
   async function requestAppointment() {
     try {
+      const body: Record<string, unknown> = {
+        requested_for: requestedFor,
+        reason,
+      };
+      if (myRole === "counsellor") {
+        body.student_id = counsellorId ? Number(counsellorId) : undefined;
+      } else {
+        body.counsellor_id = counsellorId ? Number(counsellorId) : undefined;
+      }
       await apiRequest<Appointment>("/appointments/", {
         method: "POST",
-        body: {
-          requested_for: requestedFor,
-          reason,
-          counsellor_id: counsellorId ? Number(counsellorId) : undefined,
-        },
+        body,
       });
       setRequestedFor("");
       setReason("");
       await load();
+      toast.success("Appointment requested", "Both parties have been notified.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to request appointment");
     }
@@ -64,6 +83,7 @@ export default function AppointmentsPage() {
         body: { id, status },
       });
       await load();
+      toast.success("Appointment approved", "Both parties have been notified.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update appointment");
     }
@@ -98,12 +118,23 @@ export default function AppointmentsPage() {
             className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
             required
           />
-          <label className="mt-4 block text-sm font-medium text-slate-700">Counsellor</label>
-          <select value={counsellorId} onChange={(event) => setCounsellorId(event.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-            <option value="">Any available counsellor</option>
-            {counsellors.map((counsellor) => (
-              <option key={counsellor.id} value={counsellor.id}>{counsellor.email}</option>
-            ))}
+          <label className="mt-4 block text-sm font-medium text-slate-700">{myRole === "counsellor" ? "Student" : "Counsellor"}</label>
+          <select 
+            value={counsellorId} 
+            onChange={(event) => setCounsellorId(event.target.value)} 
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            disabled={initialLoading}
+          >
+            {initialLoading ? (
+              <option value="">Loading contacts...</option>
+            ) : (
+              <>
+                <option value="">{myRole === "counsellor" ? "Select a student..." : "Select a counsellor..."}</option>
+                {contacts.map((c) => (
+                  <option key={c.id} value={c.id}>{c.email}</option>
+                ))}
+              </>
+            )}
           </select>
           <label className="mt-4 block text-sm font-medium text-slate-700">Reason</label>
           <textarea value={reason} onChange={(event) => setReason(event.target.value)} className="mt-1 min-h-24 w-full rounded-md border border-slate-300 p-3 text-sm" />
@@ -115,29 +146,50 @@ export default function AppointmentsPage() {
             <h2 className="font-semibold text-slate-900">Schedule</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {appointments.length === 0 && <p className="p-5 text-sm text-slate-500">No appointments yet.</p>}
-            {appointments.map((appointment) => (
-              <div key={appointment.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_auto]">
-                <div>
-                  <p className="font-semibold text-slate-900">{new Date(appointment.requested_for).toLocaleString()}</p>
-                  <p className="mt-1 text-sm text-slate-600">Student: {appointment.student.email}</p>
-                  <p className="text-sm text-slate-600">Counsellor: {appointment.counsellor.email}</p>
-                  {appointment.reason && <p className="mt-2 text-sm text-slate-700">{appointment.reason}</p>}
+            {initialLoading ? (
+              [1, 2, 3].map((i) => (
+                <div key={i} className="grid gap-4 p-5 lg:grid-cols-[1fr_auto]">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-56" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                  <div className="flex items-start">
+                    <Skeleton className="h-6 w-20 rounded" />
+                  </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold capitalize text-slate-700">
-                    <Clock className="h-3 w-3" />
-                    {appointment.status}
-                  </span>
-                  {appointment.status === "requested" && (
-                    <button onClick={() => updateAppointment(appointment.id, "approved")} className="inline-flex items-center gap-1 rounded-md bg-green-600 px-3 py-1 text-xs font-semibold text-white">
-                      <CheckCircle className="h-3 w-3" />
-                      Approve
-                    </button>
-                  )}
+              ))
+            ) : appointments.length === 0 ? (
+              <p className="p-5 text-sm text-slate-500">No appointments yet.</p>
+            ) : (
+              appointments.map((appointment) => (
+                <div key={appointment.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_auto]">
+                  <div>
+                    <p className="font-semibold text-slate-900">{new Date(appointment.requested_for).toLocaleString()}</p>
+                    <p className="mt-1 text-sm text-slate-600">Student: {appointment.student.email}</p>
+                    <p className="text-sm text-slate-600">Counsellor: {appointment.counsellor.email}</p>
+                    {appointment.reason && <p className="mt-2 text-sm text-slate-700">{appointment.reason}</p>}
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold capitalize text-slate-700">
+                      <Clock className="h-3 w-3" />
+                      {appointment.status}
+                    </span>
+                    {appointment.status === "requested" && appointment.requested_by?.id !== myId && (
+                      <button onClick={() => updateAppointment(appointment.id, "approved")} className="inline-flex items-center gap-1 rounded-md bg-green-600 px-3 py-1 text-xs font-semibold text-white">
+                        <CheckCircle className="h-3 w-3" />
+                        Approve
+                      </button>
+                    )}
+                    {appointment.status === "requested" && appointment.requested_by.id === myId && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
+                        Pending
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
