@@ -57,7 +57,7 @@ SECRET_KEY = os.getenv(
 if not DEBUG and SECRET_KEY.startswith("django-insecure-"):
     raise RuntimeError("DJANGO_SECRET_KEY must be set in production")
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1"])
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "calmcampus-5hry.onrender.com"])
 AUTH_USER_MODEL = "auth_app.User"
 
 FRONTEND_ORIGINS = env_list(
