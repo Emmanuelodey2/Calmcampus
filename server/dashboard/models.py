@@ -109,6 +109,20 @@ class Resource(models.Model):
         return self.title
 
 
+class StudentResource(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="saved_resources")
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name="saved_by_students")
+    saved_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ("student", "resource")
+        ordering = ["-saved_at"]
+
+    def __str__(self):
+        return f"{self.student.email} saved {self.resource.title}"
+
+
 class CrisisAlert(models.Model):
     STATUS_CHOICES = [
         ("open", "Open"),
@@ -150,6 +164,7 @@ class Appointment(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="appointments")
     counsellor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="counsellor_appointments")
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name="appointments", null=True, blank=True)
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="requested_appointments" , null=True, blank=True)
     requested_for = models.DateTimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="requested")
     reason = models.TextField(blank=True)
@@ -162,6 +177,21 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.student.email} with {self.counsellor.email} on {self.requested_for}"
+
+
+class Notification(models.Model):
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_notifications")
+    verb = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.actor.email} → {self.recipient.email}: {self.verb}"
 
 
 class DirectMessage(models.Model):
@@ -177,3 +207,37 @@ class DirectMessage(models.Model):
 
     def __str__(self):
         return f"{self.sender.email} -> {self.recipient.email}"
+
+
+class Feedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="feedbacks")
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name="feedbacks", null=True, blank=True)
+    category = models.CharField(max_length=50)
+    rating = models.PositiveIntegerField(default=5)
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Feedback by {self.user.email} - Rating: {self.rating} ({self.created_at.date()})"
+
+
+# -----------------------------
+# Counsellor Notes on Students (Journal-like notes)
+# -----------------------------
+class CounsellorNote(models.Model):
+    counsellor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="counsellor_notes")
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="student_notes")
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Note by {self.counsellor.email} for {self.student.email} on {self.created_at.date()}"
+
+

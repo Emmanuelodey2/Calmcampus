@@ -35,7 +35,7 @@ def detect_crisis(text):
     return ""
 
 
-def build_system_prompt(user, moods, journals):
+def build_system_prompt(user, moods, journals, counsellor_notes=None):
     mood_context = [
         {
             "mood": mood.mood,
@@ -53,6 +53,13 @@ def build_system_prompt(user, moods, journals):
         }
         for journal in journals
     ]
+    counsellor_notes_context = [
+        {
+            "content": note.content,
+            "created_at": note.created_at.isoformat(),
+        }
+        for note in counsellor_notes
+    ] if counsellor_notes else []
 
     return (
         "You are Hermes AI, a compassionate mental health support assistant for Nigerian higher-education students. "
@@ -61,8 +68,51 @@ def build_system_prompt(user, moods, journals):
         "Do not diagnose. Encourage human counsellor support when distress appears persistent or severe.\n\n"
         f"Student email: {user.email}\n"
         f"Recent moods: {json.dumps(mood_context)}\n"
-        f"Recent journals: {json.dumps(journal_context)}"
+        f"Recent journals: {json.dumps(journal_context)}\n"
+        f"Counsellor notes/supervision history (use this context to understand guidelines or recommendations set by their therapist/counsellor to personalize responses): {json.dumps(counsellor_notes_context)}"
     )
+
+
+def generate_student_ai_comments(user, moods, journals, chats):
+    mood_context = [
+        {
+            "mood": mood.mood,
+            "intensity": mood.intensity,
+            "description": mood.description,
+            "created_at": mood.created_at.isoformat(),
+        }
+        for mood in moods
+    ]
+    journal_context = [
+        {
+            "title": journal.title,
+            "content": journal.content[:1200],
+            "created_at": journal.created_at.isoformat(),
+        }
+        for journal in journals
+    ]
+    chat_context = [
+        {
+            "sender": msg.sender,
+            "message": msg.message[:500],
+            "created_at": msg.created_at.isoformat(),
+        }
+        for msg in chats
+    ]
+
+    prompt = (
+        "You are an expert AI clinical psychologist and assistant. Analyse this student's recent wellness data "
+        "and provide professional comments/insights. Keep your comments concise, compassionate, structured, and focused on helping the human counsellor "
+        "understand the student's mental state, key concerns, mood trends, and potential issues. Do not diagnose explicitly, but highlight indicators of depression, anxiety, stress, or crisis.\n\n"
+        f"Student: {user.email}\n"
+        f"Recent moods: {json.dumps(mood_context)}\n"
+        f"Recent journals: {json.dumps(journal_context)}\n"
+        f"Recent chat session: {json.dumps(chat_context)}\n"
+    )
+
+    system_instruction = "You are an AI wellness analysis assistant helping a university counsellor understand a student's mental health."
+    return call_gemini(system_instruction, prompt) or "No AI comments generated yet. The AI is still analyzing this student's details."
+
 
 
 def fallback_response(message, moods):
@@ -84,12 +134,17 @@ def call_gemini(system_prompt, message):
 
     url = (
         "https://generativelanguage.googleapis.com/v1beta/"
-        f"models/gemini-1.5-flash:generateContent?key={api_key}"
+        f"models/gemini-2.5-flash:generateContent?key={api_key}"
     )
     payload = {
+        "systemInstruction": {
+            "parts": [{"text": system_prompt}]
+        },
         "contents": [
-            {"role": "user", "parts": [{"text": system_prompt}]},
-            {"role": "user", "parts": [{"text": message}]},
+            {
+                "role": "user",
+                "parts": [{"text": message}]
+            }
         ],
         "generationConfig": {
             "temperature": 0.6,

@@ -1,26 +1,34 @@
-# your_app/authentication.py
+import logging
 
 from django.conf import settings
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
 
+logger = logging.getLogger(__name__)
+
 class CustomJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
+        # Exclude auth endpoints and OPTIONS preflight from authentication
+        if request.method == "OPTIONS":
+            return None
+        
         excluded_paths = [
-            "/api/auth/login/",
-            "/api/auth/signup/",
+            "/api/login/",
+            "/api/signup/",
             "/api/logout/",
+            "/api/verify-email/",
+            "/api/request-password-reset/",
+            "/api/reset-password/",
+            "/api/institutions/",
         ]
         if request.path in excluded_paths:
             return None
 
-        print("Checking for access token in cookies")
         raw_token = request.COOKIES.get("accessToken")
 
         if raw_token is None:
-            print("No access token in cookies, checking headers")
             header = self.get_header(request)
             if header:
                 raw_token = self.get_raw_token(header)
@@ -29,17 +37,15 @@ class CustomJWTAuthentication(JWTAuthentication):
             return None
 
         try:
-            print("Validating token:", raw_token)
             validated_token = self.get_validated_token(raw_token)
         except TokenError as e:
-            print(f"Access token invalid: {e}")
+            logger.debug("Access token invalid: %s", e)
             refresh_token = request.COOKIES.get("refreshToken")
 
             if not refresh_token:
                 raise AuthenticationFailed("Invalid or expired token, and no refresh token available")
 
             try:
-                print("Refreshing token with refreshToken...")
                 new_access_token = str(RefreshToken(refresh_token).access_token)
             except Exception as e:
                 raise AuthenticationFailed(f"Refresh token invalid or expired: {e}")

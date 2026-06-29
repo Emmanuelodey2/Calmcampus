@@ -1,48 +1,38 @@
-from dashboard.models import MoodEntry, JournalEntry, AIContext, ChatMessage
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User
+from .models import Institution, User
 
+
+# ─── Institution ──────────────────────────────────────────────────────────────
+
+@admin.register(Institution)
+class InstitutionAdmin(admin.ModelAdmin):
+    list_display  = ("name", "slug", "is_active", "created_at")
+    list_filter   = ("is_active",)
+    search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+
+
+# ─── User ─────────────────────────────────────────────────────────────────────
+
+@admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    # fields to display in the list
-    list_display = ("email", "is_staff", "is_superuser", "is_active")
-    list_filter = ("is_staff", "is_superuser", "is_active")
+    list_display  = ("email", "role", "institution", "is_active", "is_staff", "is_superuser")
+    list_filter   = ("role", "institution", "is_active", "is_staff", "is_superuser")
+    search_fields = ("email",)
+    ordering      = ("email",)
 
-    # fields to edit when opening a user
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
+        (None,            {"fields": ("email", "password")}),
+        ("Role & Institution", {"fields": ("role", "institution", "assigned_counsellor")}),
         ("Personal info", {"fields": ("phone", "address", "city")}),
-        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        ("Permissions",   {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
 
-    # fields when creating a new user in the admin
     add_fieldsets = (
         (None, {
             "classes": ("wide",),
-            "fields": ("email", "password1", "password2", "is_staff", "is_superuser"),
+            "fields": ("email", "password1", "password2", "role", "institution", "is_staff", "is_superuser"),
         }),
     )
-
-    search_fields = ("email",)
-    ordering = ("email",)
-
-
-# Custom admin for MoodEntry
-class MoodEntryAdmin(admin.ModelAdmin):
-    list_display = ("user", "mood", "intensity", "created_at")  # Fields to display in the list view
-    list_filter = ("mood", "created_at")  # Filters for easier navigation
-    search_fields = ("user__email", "mood")  # Search by user email or mood
-
-
-# Custom admin for JournalEntry
-class JournalEntryAdmin(admin.ModelAdmin):
-    list_display = ("user", "id","title","content", "created_at")  # Fields to display in the list view
-    list_filter = ("created_at",)  # Filters for easier navigation
-    search_fields = ("user__email", "title")  # Search by user email or title
-
-
-# Register custom user, mood entry, and journal entry
-admin.site.register(User, UserAdmin)
-admin.site.register(MoodEntry, MoodEntryAdmin)
-admin.site.register(JournalEntry, JournalEntryAdmin)

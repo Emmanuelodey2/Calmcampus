@@ -10,6 +10,10 @@ from datetime import timedelta
 from urllib.parse import urlparse, unquote
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
 from corsheaders.defaults import default_headers
 
 
@@ -53,12 +57,17 @@ SECRET_KEY = os.getenv(
 if not DEBUG and SECRET_KEY.startswith("django-insecure-"):
     raise RuntimeError("DJANGO_SECRET_KEY must be set in production")
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1","calmcampus-5hry.onrender.com"])
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1"])
 AUTH_USER_MODEL = "auth_app.User"
 
 FRONTEND_ORIGINS = env_list(
     "FRONTEND_ORIGINS",
-    ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002","https://calmcampus-rouge.vercel.app"],
+    [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "https://calmcampus-rouge.vercel.app",
+    ],
 )
 CSRF_TRUSTED_ORIGINS = FRONTEND_ORIGINS
 
@@ -69,11 +78,24 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "refreshToken",
 ]
 
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@calmcampus.com")
+EMAIL_VERIFICATION_TOKEN_LIFETIME = timedelta(hours=24)
+PASSWORD_RESET_TOKEN_LIFETIME = timedelta(hours=1)
+
+if not DEBUG:
+    if any(host in {"localhost", "127.0.0.1"} for host in ALLOWED_HOSTS):
+        raise RuntimeError("DJANGO_ALLOWED_HOSTS must be set for production")
+    if FRONTEND_BASE_URL.startswith("http://localhost"):
+        raise RuntimeError("FRONTEND_BASE_URL must be set for production")
+    if any(origin.startswith("http://localhost") for origin in FRONTEND_ORIGINS):
+        raise RuntimeError("FRONTEND_ORIGINS must be set for production")
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": False,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 SESSION_COOKIE_SECURE = not DEBUG
@@ -93,9 +115,6 @@ if not DEBUG:
 # Application definition
 
 INSTALLED_APPS = [
-    # '.ad# The code you provided seems to be a Django settings file for a project. In the
-    # # settings, there is a configuration for Simple JWT, which is a JSON Web Token
-    # # authentication plugin for Django REST framework.
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -146,6 +165,9 @@ WSGI_APPLICATION = 'sever.wsgi.application'
 
 database_url = os.getenv("DATABASE_URL")
 postgres_db = database_from_url(database_url) if database_url else None
+
+if not DEBUG and postgres_db is None:
+    raise RuntimeError("DATABASE_URL must point to PostgreSQL in production")
 
 DATABASES = {
     "default": postgres_db
@@ -208,3 +230,14 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ),
 }
+
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "25"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
