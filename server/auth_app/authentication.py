@@ -15,13 +15,13 @@ class CustomJWTAuthentication(JWTAuthentication):
             return None
         
         excluded_paths = [
-            "/api/login/",
-            "/api/signup/",
-            "/api/logout/",
-            "/api/verify-email/",
-            "/api/request-password-reset/",
-            "/api/reset-password/",
-            "/api/institutions/",
+            "/api/auth/login/",
+            "/api/auth/signup/",
+            "/api/auth/logout/",
+            "/api/auth/verify-email/",
+            "/api/auth/request-password-reset/",
+            "/api/auth/reset-password/",
+            "/api/auth/institutions/",
         ]
         if request.path in excluded_paths:
             return None
