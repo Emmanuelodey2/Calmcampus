@@ -89,6 +89,11 @@ def send_password_reset_email(user):
         f"Please open this link to choose a new password:\n{reset_url}\n\n"
         "If you did not request this, you can ignore this email."
     )
+    print(settings.EMAIL_HOST)
+    print(settings.EMAIL_PORT)
+    print(settings.EMAIL_USE_TLS)
+    print(settings.EMAIL_USE_SSL)
+    print(bool(settings.EMAIL_HOST_PASSWORD))
     try:
         send_mail(
             "Reset your CalmCampus password",
