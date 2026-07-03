@@ -259,6 +259,9 @@ def verify_email(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def request_password_reset(request):
+    print("Content-Type:", request.content_type)
+    print("Raw body:", request.body)
+    print("request.data:", request.data)
     email = request.data.get("email", "").strip()
     if not email:
         return Response({"message": "Email is required"}, status=400)
