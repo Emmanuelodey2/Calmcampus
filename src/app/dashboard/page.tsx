@@ -5,9 +5,9 @@ import DashboardPage from "./dash";
 export default async function Page() {
   const cookieStore = await cookies();
   const token = cookieStore.get("accessToken")?.value;
-  console.log(token)
+  console.log(cookieStore.getAll());
 
-  if (!token) redirect("/login");
+  // if (!token) redirect("/login");
 
   return <DashboardPage />;
 }
