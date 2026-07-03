@@ -32,9 +32,20 @@ export default function LoginPage() {
         method: "POST",
         body: { email, password },
       });
-      toast.success("Welcome back!", "Redirecting to your workspace...");
-      startLoading("Loading your workspace...");
-      router.push(data.role === "admin" ? "/admin" : "/dashboard");
+      console.log("2. Login response:", data);
+
+  toast.success("Welcome back!", "Redirecting to your workspace...");
+
+  console.log("3. Starting loader");
+  startLoading("Loading your workspace...");
+
+  console.log("4. About to navigate");
+  router.push(data.role === "admin" ? "/admin" : "/dashboard");
+
+  console.log("5. router.push finished");
+      // toast.success("Welcome back!", "Redirecting to your workspace...");
+      // startLoading("Loading your workspace...");
+      // router.push(data.role === "admin" ? "/admin" : "/dashboard");
     } catch (err) {
       toast.error("Sign in failed", err instanceof Error ? err.message : "Unable to sign in");
       setLoading(false);
