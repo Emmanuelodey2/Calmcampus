@@ -15,6 +15,7 @@ export default function RequestPasswordResetPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    console.log("Email:", email);
 
     try {
       await apiRequest("/auth/request-password-reset/", {
