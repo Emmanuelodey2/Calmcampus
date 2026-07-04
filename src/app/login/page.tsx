@@ -36,16 +36,10 @@ export default function LoginPage() {
 
   toast.success("Welcome back!", "Redirecting to your workspace...");
 
-  console.log("3. Starting loader");
+
   startLoading("Loading your workspace...");
-
-  console.log("4. About to navigate");
    router.push(data.role === "admin" ? "/admin" : "/dashboard");
-setTimeout(() => {
-  console.log(window.location.pathname);
-}, 1000);
 
-  console.log("5. router.push finished");
       // toast.success("Welcome back!", "Redirecting to your workspace...");
       // startLoading("Loading your workspace...");
       // router.push(data.role === "admin" ? "/admin" : "/dashboard");
