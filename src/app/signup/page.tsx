@@ -140,7 +140,6 @@ export default function SignupPage() {
                 className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="student">Student</option>
-                <option value="counsellor">Counsellor</option>
               </select>
             </div>
 
