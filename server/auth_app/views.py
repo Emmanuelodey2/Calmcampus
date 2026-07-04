@@ -14,10 +14,24 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.conf import settings
-from dashboard.serializers import InstitutionSerializer
+from dashboard.serializers import InstitutionSerializer\
+import resend
+
 
 logger = logging.getLogger(__name__)
 
+resend.api_key = settings.RESEND_API_KEY
+
+
+def send_email(*, to: str, subject: str, html: str):
+    return resend.Emails.send(
+        {
+            "from": settings.EMAIL_FROM,
+            "to": [to],
+            "subject": subject,
+            "html": html,
+        }
+    )
 
 def resolve_institution(payload):
     institution_id = payload.get("institution_id") or payload.get("institution")
@@ -74,40 +88,197 @@ def send_verification_email(user):
             logger.debug("Verification link for %s: %s", user.email, verification_url)
     return token_record
 
+# def send_verification_email(user):
+#     token_record = create_token(
+#         EmailVerificationToken,
+#         user,
+#         settings.EMAIL_VERIFICATION_TOKEN_LIFETIME,
+#     )
 
+#     verification_url = (
+#         f"{settings.FRONTEND_BASE_URL.rstrip('/')}/verify-email?token={urllib.parse.quote(token_record.token)}"
+#     )
+
+#     html = f""""
+#     <h2>Welcome to CalmCampus 👋</h2>
+
+#     <p>Thank you for creating an account.</p>
+
+#     <p>Please verify your email by clicking the button below.</p>
+
+#     <p>
+#         <a href="{verification_url}"
+#            style="
+#                background:#2563eb;
+#                color:white;
+#                padding:12px 20px;
+#                text-decoration:none;
+#                border-radius:8px;
+#                display:inline-block;
+#            ">
+#             Verify Email
+#         </a>
+#     </p>
+
+#     <p>
+#         Or copy this link into your browser:
+#     </p>
+
+#     <p>{verification_url}</p>
+
+#     <p>If you did not create this account, you can safely ignore this email.</p>
+#     ""
+
+#     try:
+#         send_email(
+#             to=user.email,
+#             subject="Verify your CalmCampus email",
+#             html=html,
+#         )
+#     except Exception:
+#         logger.exception("Error sending verification email to %s", user.email)
+#         if settings.DEBUG:
+#             logger.debug("Verification link: %s", verification_url)
+
+#     return token_record
 def send_password_reset_email(user):
     token_record = create_token(
         PasswordResetToken,
         user,
         settings.PASSWORD_RESET_TOKEN_LIFETIME,
     )
+
     reset_url = (
         f"{settings.FRONTEND_BASE_URL.rstrip('/')}/reset-password?token={urllib.parse.quote(token_record.token)}"
     )
-    message = (
-        f"A password reset was requested for your CalmCampus account.\n\n"
-        f"Please open this link to choose a new password:\n{reset_url}\n\n"
-        "If you did not request this, you can ignore this email."
-    )
-    print(settings.EMAIL_HOST)
-    print(settings.EMAIL_PORT)
-    print(settings.EMAIL_USE_TLS)
-    print(settings.EMAIL_USE_SSL)
-    print(bool(settings.EMAIL_HOST_PASSWORD))
+
+    html = f"""
+    <h2>Reset your CalmCampus password</h2>
+
+    <p>A password reset was requested for your account.</p>
+
+    <p>
+        <a href="{reset_url}"
+           style="
+               background:#2563eb;
+               color:white;
+               padding:12px 20px;
+               text-decoration:none;
+               border-radius:8px;
+               display:inline-block;
+           ">
+            Reset Password
+        </a>
+    </p>
+
+    <p>
+        Or copy this link into your browser:
+    </p>
+
+    <p>{reset_url}</p>
+
+    <p>If you did not request this, you can safely ignore this email.</p>
+    """
+
     try:
-        send_mail(
-            "Reset your CalmCampus password",
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
+        send_email(
+            to=user.email,
+            subject="Reset your CalmCampus password",
+            html=html,
         )
     except Exception:
         logger.exception("Error sending password reset email to %s", user.email)
         if settings.DEBUG:
-            logger.debug("Reset link for %s: %s", user.email, reset_url)
+            logger.debug("Reset link: %s", reset_url)
+
     return token_record
 
+# def send_password_reset_email(user):
+#     token_record = create_token(
+#         PasswordResetToken,
+#         user,
+#         settings.PASSWORD_RESET_TOKEN_LIFETIME,
+#     )
+#     reset_url = (
+#         f"{settings.FRONTEND_BASE_URL.rstrip('/')}/reset-password?token={urllib.parse.quote(token_record.token)}"
+#     )
+#     message = (
+#         f"A password reset was requested for your CalmCampus account.\n\n"
+#         f"Please open this link to choose a new password:\n{reset_url}\n\n"
+#         "If you did not request this, you can ignore this email."
+#     )
+#     print(settings.EMAIL_HOST)
+#     print(settings.EMAIL_PORT)
+#     print(settings.EMAIL_USE_TLS)
+#     print(settings.EMAIL_USE_SSL)
+#     print(bool(settings.EMAIL_HOST_PASSWORD))
+#     try:
+#         send_mail(
+#             "Reset your CalmCampus password",
+#             message,
+#             settings.DEFAULT_FROM_EMAIL,
+#             [user.email],
+#             fail_silently=False,
+#         )
+#     except Exception:
+#         logger.exception("Error sending password reset email to %s", user.email)
+#         if settings.DEBUG:
+#             logger.debug("Reset link for %s: %s", user.email, reset_url)
+#     return token_record
+
+def send_verification_email(user):
+    token_record = create_token(
+        EmailVerificationToken,
+        user,
+        settings.EMAIL_VERIFICATION_TOKEN_LIFETIME,
+    )
+
+    verification_url = (
+        f"{settings.FRONTEND_BASE_URL.rstrip('/')}/verify-email?token={urllib.parse.quote(token_record.token)}"
+    )
+
+    html = f"""
+    <h2>Welcome to CalmCampus 👋</h2>
+
+    <p>Thank you for creating an account.</p>
+
+    <p>Please verify your email by clicking the button below.</p>
+
+    <p>
+        <a href="{verification_url}"
+           style="
+               background:#2563eb;
+               color:white;
+               padding:12px 20px;
+               text-decoration:none;
+               border-radius:8px;
+               display:inline-block;
+           ">
+            Verify Email
+        </a>
+    </p>
+
+    <p>
+        Or copy this link into your browser:
+    </p>
+
+    <p>{verification_url}</p>
+
+    <p>If you did not create this account, you can safely ignore this email.</p>
+    """
+
+    try:
+        send_email(
+            to=user.email,
+            subject="Verify your CalmCampus email",
+            html=html,
+        )
+    except Exception:
+        logger.exception("Error sending verification email to %s", user.email)
+        if settings.DEBUG:
+            logger.debug("Verification link: %s", verification_url)
+
+    return token_record
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
